@@ -138,8 +138,8 @@ void Proxy::server()
                     if(linkOK==false)
                     {
                         DBG(
-                            false,
-                            0,
+                            //false,
+                            //0,
                             "exception on tcp link %s -> %s.",
                             ipToStr(links[i]->getCallerIP()).c_str(),
                             links[i]->getPeerName()

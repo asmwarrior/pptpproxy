@@ -7,6 +7,7 @@
 
     #include <vector>
     #include <string>
+    #include <cstring>
     #include <stdint.h>
     #include <stdarg.h>
     #include <stddef.h>

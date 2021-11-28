@@ -5,6 +5,7 @@
 
 #include <proxy.h>
 #include <pthread.h>
+#include <unistd.h>
 
 // -----------------------------------------------------------------------
 Proxy::Proxy(

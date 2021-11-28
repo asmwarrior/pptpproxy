@@ -4,6 +4,7 @@
  */
 
 #include <proxy.h>
+#include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <pthread.h>
