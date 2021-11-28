@@ -1,0 +1,20 @@
+
+todo:
+    Add timestamp to log
+    Make a standard log mode
+    Use multiple GRE threads ?
+    Add TCP-PPTP encapsulation
+    Check MTU issue in GRE thread
+    Verify the thread synchro stuff for races
+    Packet mapping could be *much* more efficient
+    Verify the id mapping stuff for control packets
+    Check for multiple GRE listeners on machine and warn
+    Add on-the-fly resolution of addresses instead of at start
+    If remote tcp connection hangs, all hangs !!!!!!!!!!!!!!!!!
+    Plant a cookie smoewhere in the control packet to make sure the proxies aren't in a cycle.
+    See to remove that ugly second strdup in pairs.cpp
+
+done:
+    Deal properly with multi-IP
+    Use r/w locks on the id database
+    In gre.cpp, sendto in many passes makes _no_ sense

@@ -1,0 +1,314 @@
+.TH PPTPPROXY 8
+.SH NAME
+pptpproxy \- forward PPTP connections through firewalls
+.SH SYNOPSIS
+.B pptpproxy
+[options]
+.SH DESCRIPTION
+.I pptpproxy
+forwards the PPTP virtual private
+network (VPN) protocol through a firewall.
+.SH OPTIONS
+.TP
+.BI \-h,\-\-help
+.sp 1
+Prints a short help message and exit.
+.TP
+.BI \-n,\-\-nofork
+.sp 1
+Do not fork in the background and output
+diagnostics on stdout. This option is useful
+when running pptpproxy in a controled environment
+such as svscan.
+.TP
+.BI \-v,\-\-version
+.sp 1
+Prints version and exit.
+.TP
+.BI "\-d,\-\-debug"
+.sp 1
+Run in debug mode.
+
+When running in debug mode
+.I pptpproxy
+.sp 0
+will log all its output to stdout.
+.sp 0
+will stay in the foreground (-nofork),
+.sp 0
+will output lots of information about what it is doing.
+.TP
+.BI \-e,\-\-extensive
+.sp 1
+Like debug, but with full hex dump of each packet
+.sp 0
+.TP
+.BI "\-l,\-\-log" " logFile"
+.sp 1
+Specify where to output log messages. This
+option forces output to be redirected to logFile,
+even if \-\-debug or \-\-nofork are specified.
+.TP
+.BI "\-p,\-\-proxy" " [listenAddress[:port],]remoteAddress[:remotePort]"
+.sp 1
+Specify a proxy pair.
+.I pptpproxy
+will listen for incoming PPTP connections on listenAddress:port.
+
+When a connection request arrives on listenAddress:port,
+it is accepted and forwarded to remoteAddress:remotePort.
+
+Multiple proxy pairs can be specified. See the example section
+for details.
+
+The listen address can be omitted, in which case it defaults to
+0.0.0.0 (listen on all local interfaces).
+
+The port number can be omitted, in which case it defaults to
+1723 (the standard PPTP tcp port).
+
+The remote address is compulsory.
+
+The remote port number can be omitted,
+in which case it defaults to 1723.
+
+If the listenAddress:port conflicts with a previously specified
+one, the newly specified pair will be ignored.
+
+At least one proxy pair must be specified for
+.I pptpproxy
+to do anything useful.
+.I pptprpoxy
+will exit right away if no pair were specified.
+.TP
+.BI "\-a,\-\-acl" " subnet/mask"
+.sp 1
+Specify an access control list (ACL). For a connection to be forwarded
+by 
+.I pptpproxy
+the connection request has to originate from an IP address
+that matches at least one ACL.
+
+Multiple ACLs can be specified.
+
+If no ACL's are specified, 
+.I pptpproxy
+will accept any incoming connection.
+.TP
+.BI "\-x,\-\-aclCmd" " external command"
+.sp 1
+Specify an external command to launch and verify incoming IP authorization.
+For a connection to be forwarded by 
+.I pptpproxy
+the connection request has to originate from an IP address that is verified
+by the external command.
+
+The external command is called with the IP address
+as an argument, and should return 0 if the IP address is authorized, and a
+non zero value otherwise.
+
+Multiple external commands can be specified. All will be tried in order,
+until one is found that authorizes the IP. If all external command fail
+to validate the IP address, pptpproxy will reject the connection attempt.
+.TP
+.BI "\-f,\-\-forceStd"
+.sp 1
+Force standard behavior with regards to PPTP-IN-TCP protocol extension.
+When this option is specified,
+.I pptpproxy
+obeys the standard pptp protocol at all times. In particular, it never
+tries to initiate the PPTP-IN-TCP protocol extension and refuses to acknowledge
+remote attempts to initiate it.
+
+.SH EXAMPLES
+.TP
+Scenario 1: home user with personal unix firewall
+
+A home user workstation has an IP address of 192.0.168.2.
+
+The workstation can access the internet through a personal unix firewall.
+
+The unix firewall is dual-homed (it has two network interfaces).
+
+One of the firewall's interfaces has an IP address of 192.0.168.1
+and is used to communicate with the "inside" LAN.
+
+The other firewall's interface is used to communicate with the "outside" (the internet).
+It can have a static or dynamically changing IP address.
+
+The workstation user would like to establish a VPN between his
+machine and a remote PPTP server located at IP address pptp.mycorp.com
+in order to get work done from home.
+
+Solution:
+
+1. Configure the workstation to connect to a PPTP server located
+at 192.0.168.1. All other configurations should be as if connecting
+directly to pptp.mycorp.com
+
+2. Run
+.I pptpproxy
+as follows on the unix firewall:
+
+pptpproxy -p pptp.mycorp.com -a 192.0.168.0/255.255.255.0
+
+.TP
+Scenario 2: firewalled PTPP server
+
+A pptp server is running on a machine behind a unix firewall.
+
+The pptp server has an IP address of 192.0.168.27.
+
+The unix firewall is dual-homed.
+
+One of the firewall's interfaces is used to communicate with the "inside" LAN.
+
+The other firewall's interface has an IP address of firewall.mycorp.com
+and is used to communicate with the "outside" (the internet).
+
+The system administrator of this LAN would like to make the internal
+PPTP server accessible to remote internet users.
+
+Solution:
+
+1. Configure user workstations to connect to a PPTP server located
+at firewall.mycorp.com. All other configurations should be as if connecting
+directly to 192.0.168.27
+
+2. Run
+.I pptpproxy
+as follows on the unix firewall:
+
+pptpproxy -p 192.0.168.27 -a 255.255.255.255/0.0.0.0
+
+.TP
+Scenario 3:firewalled client + firewalled server
+
+The combination of the two above: a home user workstation behind a
+personal firewall trying to access a PPTP server that is behind
+yet another firewall.
+
+Solution:
+
+On the personal user firewall, run:
+
+pptpproxy -p pptp.mycorp.com -a 192.0.168.0/255.255.255.0
+
+On the server side firewall, run:
+
+pptpproxy -p 192.0.168.27 -a 255.255.255.255/0.0.0.0
+.SH DIAGNOSTICS
+In \-\-debug mode or in \-\-nofork mode,
+.I pptpproxy
+will return an exit value of 1 upon
+encountering a fatal error.
+
+In normal mode,
+.I pptpproxy
+will fork itself in the background and should return an exit value
+of 0 unless it met with a fatal error prior to doing this.
+Further diagnostics can be examined via the system log.
+.SH PROXY CHAINING 
+It is perfectly possible to have a chain of proxies, one instance of
+.I pptpproxy
+relaying to the next.
+
+A possible use for such a setup would be to bypass certain vendor's
+PPTP implementation limitations that lets the user specify the server's
+IP address but prevents him/her from specifiying a TCP port.
+
+Using two instances of
+.I pptpproxy
+, one running on the firewall, the other on another
+computer, it becomes possible to route a PPTP connection
+on port 1723 on that computer to another port on the firewall's
+.I pptpproxy
+instance, but on a different port, thereby allowing people
+to connect to different PPTP peers on the other side of the firewall.
+.SH EXTENSIONS
+pptpproxy implements an extension to the PPTP protocol that
+wraps the entire PPTP traffic into the TCP control connection
+instead of using a GRE tunnel.
+
+When it connects to a remote pptp server, pptp tries to detect
+if the remote server also implements this extension (typically
+if the remote server is another instance of pptpproxy). If it
+does, the PPTP protocol gets entirely wrapped inside the regular
+TCP connection (the control connection), thereby completely
+avoiding the use of GRE packets.
+
+If pptpproxy does not detect that the remote server supports
+the extension, it falls back to a standard PPTP connection.
+
+This extension is useful when trying to establish a PPTP VPN connection
+across a firewall/router/NAT device that does not know how to properly
+forward PPTP. In this case, one can chain two pptpproxy instances on each
+side of the faulty device, and have all traffic between the two proxies be
+carried across by a standard TCP link, which has a much greater chance of
+being properly forwarded by the device.
+
+This behavior can be disabled with the -f option.
+.SH LIMITATIONS
+The PPTP protocol works with two concurrent communication pathes,
+a so-called "control connection" over a regular TCP pipe, and
+another packet-based, portless path that handles the actual data transfer.
+
+For scalability reasons,
+.I pptpproxy's
+architecture was designed around two threads.
+
+The main thread forwards the TCP control connections.
+It also peeps at the passing TCP chitchat in order
+to keep a database of "living" PPTP connection, and
+their so called "call id" (see RFC 2637 for details).
+
+The second thread handles the PPTP packet-based path.
+For each data packet received, it extracts its "call id"
+and queries the connection database in order to figure
+out  the packet's actual destination.
+
+Because of this design, only one instance of
+.I pptpproxy
+can be run on a given machine at a given time, because if more
+were to be run, the packet-based path handler thread might
+receive packets with caller ids not registered in it's
+connection database, and would thus discard them.
+
+The good news is, one instance of
+.I pptpproxy
+is perfectly capable of handling any number of simultaneous
+connections, so running two instances of pptpproxy should never be necessary.
+.SH BUGS
+The proper way of forwarding PPTP is to use native kernel
+NAT, but it isn't always straightforward, feasible or even
+implemented properly.
+.I pptpproxy
+was written for these situations.
+
+As of this writing, poptop, the Linux pptp server, does not handle
+multiple simultaneous connections originating from the same IP address.
+As a result, if you are trying to connect multiple home machines
+to a remote poptop server via pptpproxy, it will not work.
+.SH REPORTING BUGS
+Report bugs to <mgix@mgix.com>.
+.SH COPYRIGHT
+The source code of
+.I pptpproxy
+is in the public domain.
+.SH LINKS
+http://www.mgix.com/pptpproxy
+.sp 0
+RFC 2637 - Point-to-Point Tunneling Protocol (PPTP)
+.sp 0
+http://www.counterpane.com/pptp-faq.html
+.sp 0
+http://www.helmig.com/j_helmig/vpn.htm
+.sp 0
+http://poptop.lineo.com/pptp.html
+.sp 0
+http://pptpclient.sourceforge.net/ 
+.SH AUTHOR
+Written by Emmanuel Mogenet <mgix@mgix.com>
+.SH SEE ALSO
+pptpd(8), pptp(1)
+
